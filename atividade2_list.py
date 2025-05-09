@@ -1,6 +1,7 @@
 import flet as ft
 from flet import AppBar, Text, View, Column, Row
 from flet.core.colors import Colors
+from banco_list import salvar_livro as db_salvar_livro, listar_livros, obter_livro_por_id
 
 
 def main(page: ft.Page):
@@ -9,9 +10,6 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.window.width = 375
     page.window.height = 667
-
-    # Lista de livros
-    livros = []
 
     # Funções
     def salvar_livro(e):
@@ -23,38 +21,51 @@ def main(page: ft.Page):
             titulo = input_titulo.value
             autor = input_autor.value
             ano = input_ano.value
-            livros.append({"titulo": titulo, "autor": autor, "ano": ano})
-            input_titulo.value = ""
-            input_autor.value = ""
-            input_ano.value = ""
-            page.snack_bar = ft.SnackBar(content=ft.Text("Livro salvo com sucesso!"), bgcolor=Colors.GREEN)
+
+            # Salvar no banco de dados
+            if db_salvar_livro(titulo, autor, ano):
+                input_titulo.value = ""
+                input_autor.value = ""
+                input_ano.value = ""
+                page.snack_bar = ft.SnackBar(content=ft.Text("Livro salvo com sucesso!"), bgcolor=Colors.GREEN)
+            else:
+                page.snack_bar = ft.SnackBar(content=ft.Text("Erro ao salvar livro!"), bgcolor=Colors.RED)
+
             page.snack_bar.open = True
             page.update()
 
     def exibir_livros(e):
         lv_livros.controls.clear()
+
+        # Buscar do banco de dados
+        livros = listar_livros()
+
         for livro in livros:
             lv_livros.controls.append(
                 Row(
                     controls=[
-                        ft.Text(f"{livro['titulo']} - {livro['autor']} ({livro['ano']})", expand=True),
-                        ft.Button("Detalhes", on_click=lambda e, livro=livro: mostrar_detalhes(livro)),
+                        ft.Text(f"{livro.titulo} - {livro.autor} ({livro.ano})", expand=True),
+                        ft.Button("Detalhes", on_click=lambda e, livro_id=livro.id: mostrar_detalhes(livro_id)),
                     ],
                     spacing=10,
                 )
             )
         page.update()
 
-    def mostrar_detalhes(livro):
-        page.dialog = ft.AlertDialog(
-            title=ft.Text("Detalhes do Livro"),
-            content=ft.Text(f"Título: {livro['titulo']}\nAutor: {livro['autor']}\nAno: {livro['ano']}"),
-            actions=[
-                ft.TextButton("Fechar", on_click=lambda _: page.dialog.close()),
-            ],
-        )
-        page.dialog.open = True
-        page.update()
+    def mostrar_detalhes(livro_id):
+        # Buscar livro do banco de dados
+        livro = obter_livro_por_id(livro_id)
+
+        if livro:
+            page.dialog = ft.AlertDialog(
+                title=ft.Text("Detalhes do Livro"),
+                content=ft.Text(f"Título: {livro.titulo}\nAutor: {livro.autor}\nAno: {livro.ano}"),
+                actions=[
+                    ft.TextButton("Fechar", on_click=lambda _: page.dialog.close()),
+                ],
+            )
+            page.dialog.open = True
+            page.update()
 
     def gerenciar_rotas(e):
         page.views.clear()

@@ -1,7 +1,7 @@
 import flet as ft
 from flet import AppBar, Text, View, Column
 from flet.core.colors import Colors
-from banco_list import salvar_profissao, listar_profissoes
+
 
 
 def main(page: ft.Page):
